@@ -4,10 +4,11 @@ Toy model of a growing network under a notion of "strategic attachment", where n
 
 The model is structured as a dynamic program that stores a data structure with connections among the existing nodes and also every possible next-added node. This data structure is maniputated using networkx subgraphs and grows substantially with each node added to the growing network.
 
-The model has three modular components:
+The model has several modular components:
 * `explore` - this module runs PageRank for all potential next-added nodes and returns the value for each potential position.
 * `select` - this module simulates selection of a position, given values for each potential position.
-* `add` - this module updates the adjacent possible given the selected position for a next-added node.
+* `join` - this module adds a node to the selected position.
+* `update` - this module updates the adjacent possible given the selected position for a next-added node.
 
 The three modules are strung together in `grow`, which simulates the addition of a node to the growing network. This function returns a copy of the network at this point in its development.
 
