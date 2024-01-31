@@ -7,7 +7,7 @@ import numpy as np
 import networkx as nx
 
 from base import Endogenous
-from utils import random_pwl
+from utils import softmax, directed_cycle_graph, disconnected_sticks, out_star
 
 class InOneOutOne(Endogenous):
 
@@ -54,15 +54,17 @@ class InOneOutOne(Endogenous):
 class InOneOutOne_Random(InOneOutOne):
 
     name = "i1o1_random"
-    specs = {"update":"in-one-out-one",
-             "init":"cycle graph (m)",
-             "score":"equal",
-             "select":"random"}
 
-    def __init__(self,m=3):
-        # Create the initial network
-        self.specs["m"] = m
-        self.G = nx.cycle_graph(m)
+    def __init__(self,**kwargs):
+        # Specify the specifications
+        self.specs["init"] = "cycle graph (m)"
+        self.specs["score"] = "pagerank (alpha)"
+        # Record the parameters
+        self.specs["m"] = kwargs.get("m",3)
+        self.specs["alpha"] = kwargs.get("alpha",0.95)
+        # Create a directed cycle graph with m nodes
+        self.G = directed_cycle_graph(self.specs["m"])
+        # These nodes are the initial network
         self.nodes = set(self.G.nodes())
         # Score and store the initial snapshots
         nx.set_node_attributes(self.G, self.score(self.G), 'score')
@@ -70,9 +72,8 @@ class InOneOutOne_Random(InOneOutOne):
         return None
 
     def score(self,G):
-        # Calculate the scores
-        n = G.number_of_nodes()
-        scores = {node:1/n for node in G.nodes()}
+        # Calculate the PageRank scores
+        scores = nx.pagerank(G,alpha=self.specs["alpha"],max_iter=1000)
         return scores
 
     def explore(self):
@@ -85,39 +86,64 @@ class InOneOutOne_Random(InOneOutOne):
         node = random.choices(list(V),k=1)[0]
         return node
 
-class InOneOutOne_Optimal(InOneOutOne):
+class InOneOutOne_Strategic(InOneOutOne):
 
-    name = "i1o1_optimal"
-    specs = {"update":"in-one-out-one",
-             "initial":"cycle graph (m)",
-             "score":"pagerank (alpha)",
-             "select":"max"}
+    name = "i1o1_strategic"
 
     def __init__(self,**kwargs):
+        # Specify the specifications
+        self.specs["init"] = "cycle graph (m)"
+        self.specs["score"] = "pagerank (alpha)"
+        self.specs["select"] = kwargs.get("select","exponential factor (gamma)")
         # Record the parameters
         self.specs["m"] = kwargs.get("m",3)
         self.specs["alpha"] = kwargs.get("alpha",0.95)
         self.specs["gamma"] = kwargs.get("gamma",1)
         # Create the initial network
-        self.G = nx.cycle_graph(self.specs["m"])
+        self.G = directed_cycle_graph(self.specs["m"])
         self.nodes = set(self.G.nodes())
         # Score and store the initial snapshots
         nx.set_node_attributes(self.G, self.score(self.G), 'score')
         self.networks = [self.G.copy()] * self.G.number_of_nodes()
         return None
-    
+
     def score(self,G):
         # Calculate the PageRank scores
-        scores = nx.pagerank(G,alpha=self.specs["alpha"])
+        scores = nx.pagerank(G,alpha=self.specs["alpha"],max_iter=1000)
         return scores
 
     def explore(self):
         V = {}
         possibilities = self.G.nodes() - self.nodes
-        for pos in possibilities:
+        for pos in possibilities: # TODO: experiment
             H = self.G.subgraph(self.nodes | {pos})
             V[pos] = self.score(H)[pos]
         return V
+
+    def select_softmax(self,V):
+        # Turn the scores into probabilities
+        possibilities = list(V.keys())
+        probabilities = softmax(list(V.values()),self.specs["gamma"])
+        # Sample a node from V with the probabilities
+        node = random.choices(possibilities, weights=probabilities, k=1)[0]
+        return node
+
+    def select(self,V):
+        max_score = max(V.values())
+        # Adjust the scores by the factor provided
+        if self.specs['gamma'] != 1:
+            for node in V:
+                V[node] = (V[node]/max_score) ** self.specs['gamma']
+        # Turn the scores into probabilities
+        total = sum(V.values())
+        probabilities = [v / total for v in V.values()]
+        # Sample a node from V with the probabilities
+        node = random.choices(list(V.keys()), weights=probabilities, k=1)[0]
+        return node
+    
+class InOneOutOne_Optimal(InOneOutOne_Strategic):
+
+    name = "i1o1_optimal"
 
     def select(self,V):
         # Select randomly among the nodes with the maximum score
@@ -125,23 +151,4 @@ class InOneOutOne_Optimal(InOneOutOne):
         max_nodes = [k for k, v in V.items() if v == max_score]
         node = random.choices(max_nodes,k=1)[0]
         return node
-    
-class InOneOutOne_Strategic(InOneOutOne_Optimal):
 
-    name = "i1o1_strategic"
-    specs = {"update":"in-one-out-one",
-             "initial":"cycle graph (m)",
-             "score":"pagerank (alpha)",
-             "select":"exponential factor (gamma)"}
-
-    def select(self,V):
-        # Adjust the scores by the factor provided
-        if self.specs['gamma'] != 1:
-            for node in V:
-                V[node] = V[node] ** self.specs['gamma']
-        # Turn the scores into probabilities
-        total = sum(V.values())
-        probabilities = [v / total for v in V.values()]
-        # Sample a node from V with the probabilities
-        node = random.choices(list(V.keys()), weights=probabilities, k=1)[0]
-        return node

@@ -35,14 +35,12 @@ class Endogenous():
         node = self.G.number_of_nodes()
         self.G.add_node(node)
         # Get all the edges of the given position
-        for node_from, node_to in set(self.G.edges(pos)):
-            # If the position is the source of the edge
-            if node_from == pos:
-                # Add an edge from the new node to the target node
-                self.G.add_edge(node, node_to)
-            else:
-                # Add an edge from the source node to the new node
-                self.G.add_edge(node_from, node)
+        for source, target in set(self.G.in_edges(pos)):
+            # Add an edge from the source node to the new node
+            self.G.add_edge(source, node)
+        for source, target in set(self.G.out_edges(pos)):
+            # Add an edge from the new node to the target node
+            self.G.add_edge(node, target)
         # Update the set of existing nodes
         self.nodes.add(node)
         # Return the new node
