@@ -169,3 +169,31 @@ def midpoints(pos1,pos2,displace=True,new_length=1.5):
         old_length = np.sqrt(np.sum(pos2[node]**2))
         pos[node] = pos2[node]*new_length/old_length
     return pos
+
+def get_distribution(data_sequence, number_of_bins = 30):
+    # Modified from: https://github.com/ivanvoitalov/tail-estimation/
+    # define the support of the distribution
+    zeros = 0 in data_sequence
+    lower_bound = min(data_sequence) if not zeros else min([k for k in data_sequence if k>0])
+    upper_bound = max(data_sequence)
+    # define bin edges
+    log = np.log10
+    upper_bound = log(upper_bound)
+    lower_bound = log(lower_bound)
+    bins = np.logspace(lower_bound, upper_bound, number_of_bins+1)
+    if zeros:
+        # construct a temporary bin for the zeros
+        bins = np.insert(np.logspace(lower_bound, upper_bound, number_of_bins+1), 0, 0, axis=0)
+    # compute the histogram using numpy
+    y, _ = np.histogram(data_sequence, bins = bins, density = True)
+    if zeros:
+        # remove the temporary bin for the zeros, and the corresponding density
+        bins = np.delete(bins, 0)
+        y = np.delete(y, 0)
+    # for each bin, compute its average
+    x, _, _ = stats.binned_statistic(data_sequence, data_sequence, statistic='mean', bins = bins)
+    # if bin is empty, drop it from the resulting list
+    #drop_indices = [i for i,k in enumerate(y) if k == 0.0]
+    #x = [k for i,k in enumerate(x) if i not in drop_indices]
+    #y = [k for i,k in enumerate(y) if i not in drop_indices]
+    return x, y
