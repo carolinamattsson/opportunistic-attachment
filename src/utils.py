@@ -8,7 +8,7 @@ import numpy as np
 from scipy import stats
 import networkx as nx
 from collections import Counter
-import infomap
+#import infomap
 
 def softmax(A, g=1.0):
     """

@@ -1,0 +1,17 @@
+name: growth
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+  - python
+  - pylint
+  - jupyter
+  - matplotlib
+  - numpy
+  - pandas
+  - scipy
+  - scikit-learn
+  - pip:
+        - statsmodels
+        - networkx
+        - seaborn
