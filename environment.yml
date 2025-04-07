@@ -3,15 +3,16 @@ channels:
   - conda-forge
   - defaults
 dependencies:
-  - python
-  - pylint
-  - jupyter
-  - matplotlib
-  - numpy
-  - pandas
-  - scipy
-  - scikit-learn
+  - python=3.9
+  - pylint=2.17.5
+  - jupyter=1.0.0
+  - matplotlib=3.5.3
+  - numpy=1.24.4
+  - pandas=1.5.3
+  - pip=23.2.1
+  - scipy=1.11.2
+  - scikit-learn=1.2.2
   - pip:
-        - statsmodels
-        - networkx
-        - seaborn
+      - seaborn==0.12.2
+      - statsmodels==0.14.0
+      - networkx==2.8.8
