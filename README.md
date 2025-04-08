@@ -1,4 +1,4 @@
-# Endogenous growth network model
+# Network Growth Under Opportunistic Attachment
 
 Toy model of a growing network under a notion of "opportunistic attachment", where nodes seek to join the network at an advantageous position. In this model, advantageous positions are those with higher PageRank. In this implementation, exhaustive search is used to define the PageRank for potential positions and incoming nodes are proportionately more likely to select positions with higher values.
 
